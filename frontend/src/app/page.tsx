@@ -1,20 +1,20 @@
 'use client'
 
-
 import FileUploader from '@/components/FileUploader'
+import { useState } from 'react'
 
 export default function Home() {
+    const [response, setResponse] = useState<string>('');
+
     const handleFileSelect = async (files: File[]) => {
-        const file = files[0] // Get the first file
-        // Handle the file upload here
-        console.log('Selected file:', file)
-    
-        // Example: Upload to server
+        const file = files[0]
+        
         try {
           const formData = new FormData()
           formData.append('file', file)
+          formData.append('proposal_type', 'research')
     
-          const response = await fetch('/api/upload', {
+          const response = await fetch('http://localhost:8000/upload_RFP', {
             method: 'POST',
             body: formData,
           })
@@ -23,23 +23,29 @@ export default function Home() {
             throw new Error('Upload failed')
           }
     
-          console.log('File uploaded successfully')
+          const data = await response.json()
+          setResponse(data.result)
         } catch (error) {
           console.error('Upload error:', error)
+          setResponse('Error uploading file')
         }
-      }
-  return (
-    <div className="h-full w-full flex items-center justify-center">
-      <main className="flex flex-col items-center gap-8 w-full p-8">
-        <h1 className="text-3xl font-semibold py-6">
-          Start by uploading your RFP
-        </h1>
-        <FileUploader 
-          onFileSelect={handleFileSelect}
-          acceptedFileTypes={['.pdf','.doc','.docx']}
-          maxSize={5 * 1024 * 1024} // 5MB
-        />
-      </main>
-    </div>
-  );
+    }
+    
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <main className="flex flex-col items-center gap-8 w-full p-8">
+          <h1 className="text-3xl font-semibold py-6">
+            Start by uploading your RFP
+          </h1>
+          <FileUploader 
+            onFileSelect={handleFileSelect}
+            acceptedFileTypes={['.pdf','.doc','.docx']}
+            maxSize={5 * 1024 * 1024}
+          />
+          {response && (
+            <p className="mt-4 max-w-2xl text-lg">{response}</p>
+          )}
+        </main>
+      </div>
+    );
 }
