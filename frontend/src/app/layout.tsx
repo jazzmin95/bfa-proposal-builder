@@ -30,7 +30,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`h-full ${lexend.variable} ${spaceMono.variable}`}>
-      <body className="h-full">
+      <body className="h-full" suppressHydrationWarning>
         <AntConfigProvider>
           {children}
         </AntConfigProvider>

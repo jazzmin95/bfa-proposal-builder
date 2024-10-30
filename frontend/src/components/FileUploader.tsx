@@ -9,6 +9,7 @@ interface FileUploaderProps {
   onFileSelect?: (files: File[]) => void;
   maxSize?: number; // in bytes
   acceptedFileTypes?: string[];
+  isUploading?: boolean;
 }
 
 export const FileUploader: React.FC<FileUploaderProps> = ({
