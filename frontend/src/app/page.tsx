@@ -5,8 +5,10 @@ import { useState } from 'react'
 
 export default function Home() {
     const [response, setResponse] = useState<string>('');
+    const [isUploading, setIsUploading] = useState<boolean>(false);
 
     const handleFileSelect = async (files: File[]) => {
+        setIsUploading(true);
         const file = files[0]
         
         try {
@@ -28,6 +30,8 @@ export default function Home() {
         } catch (error) {
           console.error('Upload error:', error)
           setResponse('Error uploading file')
+        } finally {
+          setIsUploading(false)
         }
     }
     
@@ -39,8 +43,8 @@ export default function Home() {
           </h1>
           <FileUploader 
             onFileSelect={handleFileSelect}
-            acceptedFileTypes={['.pdf','.doc','.docx']}
             maxSize={5 * 1024 * 1024}
+            isUploading={isUploading}
           />
           {response && (
             <p className="mt-4 max-w-2xl text-lg">{response}</p>

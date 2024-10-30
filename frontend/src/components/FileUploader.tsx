@@ -4,40 +4,33 @@ import { useDropzone } from 'react-dropzone';
 
 interface FileUploaderProps {
   onFileSelect?: (files: File[]) => void;
-  maxSize?: number; // in bytes
+  maxSize?: number;
   acceptedFileTypes?: string[];
+  isUploading?: boolean;
 }
 
 export const FileUploader: React.FC<FileUploaderProps> = ({
   onFileSelect,
-  maxSize = 10485760, // 10MB default
-  acceptedFileTypes = ['image/*', 'application/pdf'],
+  maxSize = 10485760, 
+  isUploading = false,
 }) => {
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    setUploadProgress(0);
     setUploadedFiles(acceptedFiles);
     if (onFileSelect) {
       onFileSelect(acceptedFiles);
-      // Simulate upload progress
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 10;
-        setUploadProgress(progress);
-        if (progress >= 100) clearInterval(interval);
-      }, 200);
     }
   }, [onFileSelect]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     maxSize,
-    accept: acceptedFileTypes.reduce((acc, curr) => ({ ...acc, [curr]: [] }), {}),
-    onDragEnter: () => setIsDragging(true),
-    onDragLeave: () => setIsDragging(false),
+    accept: {
+      'application/pdf': ['.pdf'],
+      'application/msword': ['.doc'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
+    }
   });
   return (
     <Card>
@@ -46,8 +39,9 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       <div
         {...getRootProps()}
         className={`p-8 cursor-pointer transition-all duration-200 ${
-          isDragging || isDragActive ? 'border-primary bg-primary/10' : 'border-gray-300'
+          isDragActive ? 'border-primary bg-primary/10' : 'border-gray-300'
         }`}
+        aria-label="File upload dropzone"
       >
         <input {...getInputProps()} />
         <div className="flex flex-col items-center justify-center gap-4">
@@ -62,10 +56,10 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
               or click to browse
             </p>
           </div>
-          {uploadProgress > 0 && uploadProgress < 100 && (
+          {isUploading && (
             <Progress
               size="sm"
-              value={uploadProgress}
+              isIndeterminate
               color="primary"
               className="max-w-md"
             />
@@ -77,9 +71,9 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     <CardFooter> 
       <div className="p-4 bg-transparent">
         <p className="text-sm text-gray-600 mb-2">
-          {uploadedFiles.length} file{uploadedFiles.length !== 1 ? 's' : ''} {uploadProgress === 100 ? 'uploaded' : 'selected'}
+          {uploadedFiles.length} file{uploadedFiles.length !== 1 ? 's' : ''} {isUploading ? 'uploading...' : 'selected'}
         </p>
-        {uploadedFiles.length > 0 && uploadProgress === 100 && (
+        {uploadedFiles.length > 0 && !isUploading && (
           uploadedFiles.map((file, index) => (
             <div key={index} className="text-sm">
               {file.name}
