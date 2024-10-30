@@ -33,10 +33,7 @@ export default function Home() {
     
     return (
       <div className="h-full w-full flex items-center justify-center">
-        <main className="flex flex-col items-center gap-8 w-full p-8">
-          <h1 className="text-3xl font-semibold py-6">
-            Start by uploading your RFP
-          </h1>
+        <main className="flex flex-col items-center gap-10 w-full p-10">
           <FileUploader 
             onFileSelect={handleFileSelect}
             acceptedFileTypes={['.pdf','.doc','.docx']}

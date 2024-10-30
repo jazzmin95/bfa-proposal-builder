@@ -9,7 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ant-design/icons": "^5.5.1",
     "@nextui-org/react": "^2.4.8",
+    "antd": "^5.21.6",
     "framer-motion": "^11.11.10",
     "next": "15.0.2",
     "react": "^18.2.0",
