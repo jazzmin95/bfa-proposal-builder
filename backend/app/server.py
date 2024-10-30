@@ -2,6 +2,16 @@ import openai
 from fastapi import FastAPI, File, UploadFile, HTTPException
 import os
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Get the root directory and load .env
+root_dir = Path(__file__).parent.parent.parent
+load_dotenv(root_dir / '.env')
+
+print(f"Looking for .env in: {root_dir}")
+print(f"API Key found: {'Yes' if os.getenv('OPENAI_API_KEY') else 'No'}")
+
 
 
 # Get OpenAI API key from environment variables
@@ -27,78 +37,68 @@ app.add_middleware(
 )
 
 
-## Endpoint to upload all the PROPOSALS and RFPs, plus the MAIN_RFP and then call the OpenAI API to get the Section 1 text
+## Endpoint to upload all the PROPOSALS and RFPs, plus the MAIN_RFP and then call the Gemini API to get the Section 1 text
 @app.post("/upload_RFP")
 async def upload_RFP(file: UploadFile = File(...), proposal_type: str = "research"):
     try:
-        # Create a dictionary to store file IDs with meaningful names
-        uploaded_files = {}
+        import google.generativeai as genai
         
-        # Upload main RFP
+        # Configure Gemini API
+        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+        model = genai.GenerativeModel('gemini-pro')
+        
+        # Read the main RFP file
         main_RFP = await file.read()
-        main_rfp_upload = openai.File.create(
-            file=main_RFP,
-            purpose='assistants'
-        )
-        uploaded_files['main_rfp'] = main_rfp_upload.id
         
+        # Read example proposals and RFPs
+        example_files = {
+            'proposals': [],
+            'rfps': []
+        }
         
-        # Get and upload all proposal files
+        # Get all proposal files
         proposals_dir = f'static/{proposal_type}/proposals'
         for filename in os.listdir(proposals_dir):
             with open(os.path.join(proposals_dir, filename), 'rb') as f:
-                proposal_upload = openai.File.create(
-                    file=f.read(),
-                    purpose='assistants'
-                )
-                uploaded_files[f'proposal_{filename}'] = proposal_upload.id
+                example_files['proposals'].append(f.read())
                 
-        # Get and upload all RFP files
+        # Get all RFP files
         rfps_dir = f'static/{proposal_type}/rfps'
         for filename in os.listdir(rfps_dir):
             with open(os.path.join(rfps_dir, filename), 'rb') as f:
-                rfp_upload = openai.File.create(
-                    file=f.read(),
-                    purpose='assistants'
-                )
-                uploaded_files[f'rfp_{filename}'] = rfp_upload.id
+                example_files['rfps'].append(f.read())
 
         # Create the prompt
-        prompt = f"""You are a sales expert who wants to summarize the requirements stated in an RFP (Request for proposals) for research projects. This RFP is made public by a potential client of BFA who wants to outsource the research project to the best possible candidate.
+        prompt = """You are a sales expert who wants to summarize the requirements stated in an RFP (Request for proposals) for a research project. This RFP is made public by a potential client of BFA who wants to outsource the research project to the best possible candidate.
 
 The output summary, called "Our understanding of your requirements", will be the first section of the full proposal to convince the client that BFA is the best choice available.
 
-I have uploaded four RFPs and the four full proposals that BFA sent to the client:
+I have uploaded four example RFPs and their corresponding full proposals that BFA sent to previous clients. The proposal "Proposal_1.pdf" corresponds to the RFP "RFP_1.pdf", and so on.
 
-RFP files:
-{chr(10).join([f'- {key}: {value}' for key, value in uploaded_files.items() if key.startswith('rfp_')])}
-
-Proposal files:
-{chr(10).join([f'- {key}: {value}' for key, value in uploaded_files.items() if key.startswith('proposal_')])}
-
-Your task is to create the summary for the main RFP (file ID: {uploaded_files['main_rfp']}).
+Your task is to create a summary for the "MainRFP.pdf" file.
 
 Formatting instructions:
-Use the same tone, style, and wording as the examples uploaded
-Create a summary that is similar in structure and length to the examples provided below
+Use the same tone, style, and wording as the examples provided
+Create a summary that is similar in structure and length to the examples
 Identify how the summary was created from the past RFP-Proposal example pairs and follow the same patterns for the tasked summary
 
 Process instructions:
 Firstly, read all 4 RFPs and their matching Proposals to understand how BFA is crafting this summary. 
 Only then, read the main RFP and craft your own summary for it."""
-        
-        # Call OpenAI API with all file attachments
-        response = openai.ChatCompletion.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": prompt}
-            ],
-            file_ids=[uploaded_files[file_id] for file_id in uploaded_files],
-            temperature=0.0
-        )
+
+        # Call Gemini API with context and main RFP
+        response = model.generate_content([
+            prompt,
+            "Example RFPs:",
+            *example_files['rfps'],
+            "Example Proposals:",
+            *example_files['proposals'],
+            "Main RFP to summarize:",
+            main_RFP
+        ])
         
         # Extract and return the response
-        analysis_result = response.choices[0].message.content
+        analysis_result = response.text
         
         return {"status": "success", "result": analysis_result}
         
