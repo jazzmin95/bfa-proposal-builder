@@ -1,29 +1,26 @@
-import React, { useCallback, useState } from "react";
-import { Progress } from "@nextui-org/react";
-import { Card, Space } from "antd";
-import { useDropzone } from "react-dropzone";
+import React, { useCallback } from "react";
+import { Progress, Typography, Card, Space } from "antd";
 import { FileFilled } from "@ant-design/icons";
-import Title from "antd/es/typography/Title";
+import { useDropzone } from "react-dropzone";
 
 interface FileUploaderProps {
   onFileSelect?: (files: File[]) => void;
   maxSize?: number; // in bytes
   acceptedFileTypes?: string[];
   isUploading?: boolean;
+  uploadProgress?: number;
 }
 
 export const FileUploader: React.FC<FileUploaderProps> = ({
   onFileSelect,
   maxSize = 10485760,
   isUploading = false,
+  uploadProgress = 0,
+  acceptedFileTypes = [".pdf", ".doc", ".docx"],
 }) => {
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
-      setUploadedFiles(acceptedFiles);
       if (onFileSelect) {
         onFileSelect(acceptedFiles);
       }
@@ -42,44 +39,32 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     },
   });
   return (
-    <>
-      <Space direction="vertical" size="small">
-        <Card
-          style={{ width: 300 }}
-          title="Start by uploading your RFP"
-          {...getRootProps()}
-        >
+    <Space direction="vertical">
+      <div {...getRootProps()}>
+        <Card style={{ width: "100%", margin: "1rem 0 0 0" }}>
           <input {...getInputProps()} />
-          <FileFilled style={{ fontSize: "48px", padding: "16px",  cursor: "pointer" }} />
-
-          <Title level={5}>
+          <FileFilled
+            style={{ fontSize: "48px", padding: "16px", cursor: "pointer" }}
+          />
+          <Typography.Title
+            level={5}
+            style={{ fontFamily: "Lexend", fontWeight: 400, lineHeight: 1.6 }}
+          >
             Drag and drop your files here or click to browse
-          </Title>
+          </Typography.Title>
 
           {isUploading && (
-            <Progress
-              size="sm"
-              value={uploadProgress}
-              color="primary"
-              className="max-w-md"
-            />
+            <Progress percent={uploadProgress} className="max-w-md" />
           )}
-        </Card>{" "}
-        <Card style={{ width: 300 }}>
-          <span key="status">
-            {uploadedFiles.length} file{uploadedFiles.length !== 1 ? "s" : ""}{" "}
-            {isUploading ? "uploading..." : "selected"}
-            <p key="files">
-              {uploadedFiles.length > 0 &&
-                !isUploading &&
-                uploadedFiles.map((file, index) => (
-                  <span key={index}>{file.name}</span>
-                ))}
-            </p>
-          </span>
         </Card>
-      </Space>
-    </>
+      </div>
+
+      <Typography.Text
+        style={{ fontSize: "12px", fontFamily: "Lexend", fontWeight: 600, padding: "0 1rem", textTransform: "uppercase" }}
+      >
+        Accepted file types: {acceptedFileTypes?.join(", ")}
+      </Typography.Text>
+    </Space>
   );
 };
 

@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import { Metadata } from 'next'
 import { Lexend, Space_Mono } from "next/font/google";
 import AntConfigProvider from '@/components/AntConfigProvider';
 import './globals.css'
 import 'antd/dist/reset.css' 
+import { App } from 'antd';
 
 const lexend = Lexend({
   subsets: ['latin'],
@@ -29,11 +30,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`h-full ${lexend.variable} ${spaceMono.variable}`}>
-      <body className="h-full" suppressHydrationWarning>
-        <AntConfigProvider>
-          {children}
-        </AntConfigProvider>
+    <html lang="en" className={`h-full ${lexend.variable} ${spaceMono.variable}`} suppressHydrationWarning>
+      <body className="h-full">
+        <App>
+          <AntConfigProvider>
+            {children}
+          </AntConfigProvider>
+        </App>
       </body>
     </html>
   );
